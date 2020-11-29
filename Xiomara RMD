@@ -1,1 +1,33 @@
+---
+title: "Xiomara Chirinos Notebook"
+output: html_notebook
+---
+
+```{r}
+library(rtweet)
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+```
+
+
+```{r}
+# store api keys
+api_key_x <- "MOqJTxSWIltmfdykwZTP3pOzo"
+api_secret_key_x <- "BLhc8W1YVE68TRd0TeSvUl5QzbchFMMpmI0egcAnGDM3amEATd"
+access_token_x <- "1326315578458562564-bxP5bd84pyJdph3HT8YxQP405jot4B"
+access_token_secret_x <- "SANAoJb3kPZkMqfhRbw2Euj4QCK7GjXQQEWdM29FLY2dc"
+```
+
+
+
+```{r}
+# authenticate via web browser
+token_x <- create_token(
+  app = "XiomaraChirnos_TextAnalysis",
+  consumer_key = api_key_x,
+  consumer_secret = api_secret_key_x,
+  access_token = access_token_x,
+  access_secret = access_token_secret_x)
+```
 
