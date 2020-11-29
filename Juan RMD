@@ -11,20 +11,22 @@ library(ggplot2)
 
 ```{r}
 # store api keys
-api_key <- "Ov17bPoNkZv4fDp0x8FZ87gmN"
-api_secret_key <- "4NcE5QunBvqBcZLygTDJuQuXi2O3eZ2xgv5msbpoU4rFZQPeyT"
-access_token <- "1326315858847821826-GmIpk8z2OZGCqAnkvTnBhYWIcSH2HX"
-access_token_secret <- "r0hisgdVZzwjAg5o4rJGv5meLIxdeYE5tNsG1LlDgZuqi"
+api_key_j <- "Ov17bPoNkZv4fDp0x8FZ87gmN"
+api_secret_key_j <- "4NcE5QunBvqBcZLygTDJuQuXi2O3eZ2xgv5msbpoU4rFZQPeyT"
+access_token_j <- "1326315858847821826-GmIpk8z2OZGCqAnkvTnBhYWIcSH2HX"
+access_token_secret_j <- "r0hisgdVZzwjAg5o4rJGv5meLIxdeYE5tNsG1LlDgZuqi"
 ```
 
 ```{r}
 # authenticate via web browser
-token <- create_token(
+token_j <- create_token(
   app = "Dr.Zambrano",
-  consumer_key = api_key,
-  consumer_secret = api_secret_key,
-  access_token = access_token,
-  access_secret = access_token_secret)
+  consumer_key = api_key_j,
+  consumer_secret = api_secret_key_j,
+  access_token = access_token_j,
+  access_secret = access_token_secret_j)
 ```
+
+
 
 
