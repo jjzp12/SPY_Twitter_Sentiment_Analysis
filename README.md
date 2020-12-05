@@ -1,5 +1,3 @@
-
-                                                                 Source: Free Stock Charts 2020
 # Twiter Sentiment Analysis of Tweets mentioning SPY 
 
 Our group of Data Scientists scholars has the objective of evaluating Twitter’s user’s sentiment on the stock market by obtaining tweets about the S & P 500 index and its derivatives. The S & P 500 represents the biggest 500 publicly traded companies in the United States making up a great portion of the stock market with a total of 15 trillion in market cap. We will be utilizing financial terms both formal and informal to capture users’ sentiments on the index.
