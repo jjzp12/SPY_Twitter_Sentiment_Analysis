@@ -1,4 +1,3 @@
-spy monthly chart.JPG
 Source: Free Stock Charts 2020
 # Twiter Sentiment Analysis of Tweets mentioning SPY 
 
