@@ -1,0 +1,751 @@
+---
+title: "$SPY Twitter Sentiment Analysis"
+author: "Juan Zambrano & Xiomara Chirinos"
+date: "12/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE}
+library(tidyverse)
+library(vosonSML)
+library(tidytext)
+library(quanteda)
+library(syuzhet)
+require("reshape2")
+require("lda")
+library(jsonlite)
+library(stringr)
+library(tm)
+library(rtweet)
+library(ggplot2)
+library(lubridate)
+library(hms)
+library(caTools)
+library(caret)
+library(e1071)
+library(rpart)
+library(rpart.plot)
+library(party)
+library(forecast)
+library(RMySQL)
+library(odbc)
+library(DBI)
+```
+
+
+## Abstract
+
+Our group of Data Scientists scholars has the objective of evaluating Twitter’s user’s sentiment on the stock market by obtaining tweets about the S & P 500 index and its derivatives. The S & P 500 represents the biggest 500 publicly traded companies in the United States making up a great portion of the stock market with a total of 15 trillion in market cap. We will be utilizing financial terms both formal and informal to capture users’ sentiments on the index.
+
+The steps to obtain relatable data will be to utilize an API from Twitter that would allow us to withdraw specific tweets from its servers. We will be obtaining tweets utilizing a familiar symbol in Fintwit (Financial Twitter) such as $ (Dollar Sign). The dollar sign is used to represent financial instruments such as the S & P 500 (Ex. $SPY). Because our goal is to capture sentiment, we will be using other financial terms such as “bullish”, “bearish”, “long”, “short”, “options call”, “options put”, among other terms to identify the user's sentiment on the S & P 500.
+
+We consider our project of big relevance to the public due to the importance the United States stock market has in the economy of the US and the world. Additionally, the stock market is currently at an interesting place where it has recently reached all-time highs. Could twitter determine if the market will continue its bullish trend? Will it predict the start of a bear market? We hope that with our project’s outcome we can collect actionable information to be used by traders.
+
+
+# Table of contents
+
+> Table of Contents
+
+1. Data Import
+      
+  * Twitter API
+      + Twitter Connection
+      + Tweets Search
+      
+2. Export to AWS
+
+  * Exporting our Data Sets into an Amazon Web Service
+
+3. Data Transformation 
+
+  * Importing and Combining Group's Datasets
+  * Selecting the Variables of Value for the project 
+  
+4. Sentiment Analysis 
+  
+  * Running a word search package to obtain general sentiment of our Tweets
+  * Visualization
+  * Running an specific word search to obtain sentiment of our Tweets
+  * Visualization
+  * Conclusion
+  
+5. Logistic Regression 
+
+  * Running Model
+  * Conclusion 
+
+6. Decision Trees 
+
+   * C-Tree 
+      + Running Model
+      + Visualization
+   
+   * Cart 
+      + Running Model
+       + Visualization
+    
+   * Conclusion 
+
+7. Naive Base Model 
+
+   * Running Model
+   * Conclusion 
+
+8. Clustering 
+
+   * Running Model
+   * Visualizations
+   
+9. Time Series 
+   
+   * Running Model
+   * Visualizations
+   * Conclusion   
+
+10. Project Conclusion
+
+11. Libraries and Packages used in the Project
+
+### 1. Data Import 
+
+#### Twitter API
+
+#### Twitter Connection
+
+```{r }
+# store api keys
+api_key_x <- "MOqJTxSWIltmfdykwZTP3pOzo"
+api_secret_key_x <- "BLhc8W1YVE68TRd0TeSvUl5QzbchFMMpmI0egcAnGDM3amEATd"
+access_token_x <- "1326315578458562564-bxP5bd84pyJdph3HT8YxQP405jot4B"
+access_token_secret_x <- "SANAoJb3kPZkMqfhRbw2Euj4QCK7GjXQQEWdM29FLY2dc"
+
+# authenticate via web browser
+token_x <- create_token(
+  app = "XiomaraChirnos_TextAnalysis",
+  consumer_key = api_key_x,
+  consumer_secret = api_secret_key_x,
+  access_token = access_token_x,
+  access_secret = access_token_secret_x)
+```
+
+#### Tweets Search 
+
+```{r }
+#SPY_Tweets_X <- search_tweets("$SPY", n = 18000, include_rts = FALSE)
+```
+
+### 2. Export to AWS
+
+#### Exporting our Data Sets into an Amazon Web Services
+
+```{r }
+# Instance Details
+host = "xchirinos-database.ciowvfrrrqse.us-east-1.rds.amazonaws.com"
+port = 3306
+user = "admin"
+dbname = "xchirinosdatabase"
+password = "potamita5181305"
+
+# Connecting to Database
+con = DBI::dbConnect(
+  RMySQL::MySQL(),
+  dbname = dbname,
+  host = host,
+  port = port,
+  user = user,
+  password = password
+)
+```
+
+```{r}
+# Creating a New Table
+# dbCreateTable(conn = con, name = "SPY_TWEETS", fields = SPY_Final_XJ, row.names = NULL)
+```
+
+```{r}
+# Writing data frame to table
+# dbWriteTable(
+#   conn = con,
+#   name = "SPY_TWEETS",
+#   value = SPY_Final_XJ,
+#   append = TRUE,
+#   row.names = FALSE
+#  )
+```
+
+
+```{r, results="hide"}
+# Reading Tables
+dbReadTable(con, "SPY_TWEETS")
+```
+
+
+### 3. Data Transformation
+
+#### Importing and Combining Group's Datasets
+
+```{r}
+# combining all groups of datasets
+# SPY_Final_Data_X <- rbind(SPY_Tweets_X, SPY_Tweets_X1, SPY_Tweets_X2, SPY_Tweets_X3, SPY_Tweets_X4, SPY_Tweets_X5, SPY_Tweets_X6, SPY_Tweets_X7, SPY_Tweets_X8, SPY_Tweets_X9)
+
+# combining Juan and Xiomara datasets
+# SPY_Final_Data_XJ <- rbind(SPY_Final_Data_J, SPY_Final_Data_X)
+
+# exporting data as csv
+# write_as_csv(SPY_Final_Data_XJ, "SPY_Final_Data_Xj", prepend_ids = TRUE, na = "", fileEncoding = "UTF-8")
+
+# save_as_csv(SPY_Final_Data_Xj, "SPY_Final_Data_Xj", prepend_ids = TRUE, na = "", fileEncoding = "UTF-8")
+
+# SPY_Final_Data_XJ_NODUP <-  SPY_Final_Data_XJ[!duplicated(SPY_Final_Data_XJ[ , c("status_id")]),]
+```
+
+#### Selecting the Variables of Value for the project
+
+```{r}
+SPY_Final_XJ_2 <- read.csv("SPY_Final_Data_XJ_NODUP.csv")
+
+SPY_Final_XJ <- SPY_Final_XJ_2 %>% separate(created_at, into = c("Date", "Time"), sep = " ", convert = TRUE)
+
+SPY_Final_XJ$Time <- as.hms(SPY_Final_XJ$Time)
+SPY_Final_XJ$Date <- as.Date(SPY_Final_XJ$Date)
+
+SPY_Final_XJ <- SPY_Final_XJ %>% select(user_id, status_id, Date, Time, screen_name, text, source, display_text_width, reply_to_status_id, is_quote, favorite_count, retweet_count, hashtags, symbols, lang, name, location, description, protected, followers_count, friends_count, listed_count, statuses_count, favourites_count, account_created_at, verified, reply_to_status_id)
+
+# create a copy of the dataset for each model
+SPY_Sentiment <- SPY_Final_XJ
+SPY_LG <- SPY_Final_XJ
+SPY_TREE <- SPY_Final_XJ
+SPY_CART <- SPY_Final_XJ
+SPY_NB <- SPY_Final_XJ
+SPY_TS <- SPY_Final_XJ
+```
+
+
+
+### 4. Sentiment Analysis 
+
+#### Running a word search package to obtain general sentiment of our Tweets
+
+We utilized packages "tidytext" and "afinn" to get an idea of the general sentiment of Tweets while using common words used in our day to day lives.  The "afinn" lexicon is a list of positive and negative polar words with some score associated with them, and we will be using it to qualify the sentiment as positive or negative.
+
+```{r }
+# convert the data set to a text corpus
+tweet_corp <- quanteda::corpus(SPY_Sentiment,
+text="text")
+
+# quick summary
+summary(tweet_corp,
+n=2)
+
+senti <- get_sentiments("afinn")
+head(senti)
+
+# Reading our tweets in again and merge the sentiments
+tweet_tidy <- as_tibble(SPY_Sentiment) %>%
+# tokenize the tweets
+tidytext::unnest_tokens(word, text) %>%
+# merge sentiment
+inner_join(senti)
+
+# now we can group the sentiment by tweets and a positivity score by totaling the sentiments
+
+positivity <- tweet_tidy %>%
+group_by(status_id) %>%
+summarise(positiv=sum(value))
+head(positivity)
+
+#  plot the score 
+tweet_tidy <- as_tibble(SPY_Sentiment) %>%
+inner_join(positivity, by="status_id")
+```
+
+#### Visualizations
+
+##### 1
+
+A graph was created to determine the average sentiment trend vs the days where we collected Tweets.
+
+```{r}
+# sentiment visualization
+ggplot(tweet_tidy, aes(x=Date, y=positiv)) +
+geom_point() +
+geom_smooth() +
+theme_minimal() +
+labs(x="Date",
+y="Average sentiment")
+```
+
+##### 2 
+
+In this graph we can see the different sentiments vs scores. We can see that negative and positive have the biggest score with positive taking the lead. 
+
+```{r }
+# Converting tweets to ASCII to trackle strange characters
+tweets2 <- iconv(SPY_Sentiment, from="UTF-8", to="ASCII", sub="")
+# removing retweets, in case needed 
+tweets2 <-gsub("(RT|via)((?:\\b\\w*@\\w+)+)","",tweets2)
+# removing mentions, in case needed
+tweets2 <-gsub("@\\w+","",tweets2)
+ew_sentiment<-get_nrc_sentiment((tweets2))
+sentimentscores<-data.frame(colSums(ew_sentiment[,]))
+names(sentimentscores) <- "Score"
+sentimentscores <- cbind("sentiment"=rownames(sentimentscores),sentimentscores)
+rownames(sentimentscores) <- NULL
+ggplot(data=sentimentscores,aes(x=sentiment,y=Score))+
+  geom_bar(aes(fill=sentiment),stat = "identity")+
+  theme(legend.position="none")+
+  xlab("Sentiments")+ylab("Scores")+
+  ggtitle("Total sentiment based on scores")+
+  theme_minimal()
+```
+
+
+#### Creating our specific keywords dataset to obtain sentiment of our Tweets
+
+We searched specific financial terms both formal and informal that are typically used by traders and/or people involved in Twitter for financial market purposes. 
+
+Positive words: Bullish, Bull Market, Long, Call, BTFD and Bottom.
+
+```{r}
+# positive sentiment 
+Bullish <- sum(str_detect(SPY_Sentiment$text, regex('bullish', ignore_case = TRUE)))
+BullMarket <- sum(str_detect(SPY_Sentiment$text, regex('Bull Market', ignore_case = TRUE)))
+Long <- sum(str_detect(SPY_Sentiment$text, regex('long', ignore_case = TRUE)))
+OptionsCall <- sum(str_detect(SPY_Sentiment$text, regex('Call', ignore_case = TRUE)))
+BTFD <- sum(str_detect(SPY_Sentiment$text, regex('BTFD', ignore_case = TRUE)))
+Bottom <- sum(str_detect(SPY_Sentiment$text, regex('Bottom', ignore_case = TRUE)))
+```
+
+```{r, echo=FALSE}
+cat("Tweets that mention Bullish:",Bullish, "\n")
+cat("Tweets that mention Bull Market:",BullMarket, "\n")
+cat("Tweets that mention Long:",Long, "\n")
+cat("Tweets that mention Options Call:",OptionsCall, "\n")
+cat("Tweets that mention BTFD:",BTFD, "\n")
+cat("Tweets that mention Bottom:",Bottom, "\n")
+```
+
+Negative words: Bearish, Bear Market, Short, Put, STFR and Top
+
+```{r}
+# negative sentiment
+Bearish <- sum(str_detect(SPY_Sentiment$text, regex('bearish', ignore_case = TRUE)))
+BearMarket <- sum(str_detect(SPY_Sentiment$text, regex('Bear Market', ignore_case = TRUE)))
+Short <- sum(str_detect(SPY_Sentiment$text, regex('short', ignore_case = TRUE)))
+OptionsPut <- sum(str_detect(SPY_Sentiment$text, regex('Put', ignore_case = TRUE)))
+STFR <- sum(str_detect(SPY_Sentiment$text, regex('STFR', ignore_case = TRUE)))
+Top <- sum(str_detect(SPY_Sentiment$text, regex('Top', ignore_case = TRUE)))
+```
+
+```{r, echo=FALSE}
+cat("Tweets that mention Bearish:",Bearish, "\n")
+cat("Tweets that mention Bear Market:",BearMarket, "\n")
+cat("Tweets that mention Short:",Short, "\n")
+cat("Tweets that mention Options Put:",OptionsPut, "\n")
+cat("Tweets that mention STFR:",STFR, "\n")
+cat("Tweets that mention Top:",Top, "\n")
+```
+
+
+```{r}
+# KeyWordsSentiment <- tibble (KeyWord = c("Bullish", "Bearish", "Bull Market", "Bear Market", "Long", "Short", "Call", "Put", "BTFD", "STFD", "Bottom", "Top"),
+# Count = c(673, 282, 40, 15, 1197, 1193, 1425, 1191, 32, 1, 324, 1482),
+# Sentiment = c("Positive", "Negative", "Positive", "Negative","Positive", "Negative","Positive", "Negative","Positive", "Negative","Positive", "Negative"))
+
+# export sentiment data
+# write.csv(KeyWordsSentiment, file = "KeyWordsSentiment.csv")
+
+# import sentiment data as factors
+KeyWordsSentiment2 <- read.csv("KeyWordsSentiment.csv", stringsAsFactors = TRUE)
+```
+
+#### Visualization
+
+In this graph we are displaying the overall word count vs sentiment. This allows to know the sentiment in words of the Tweets we collected. We can see the that Positive words/sentiment take and slight lead over Negative.
+
+Positive: 3691
+Negative: 3038
+
+```{r}
+ggplot(data = KeyWordsSentiment2,
+       mapping = aes(x = KeyWord, y = Count, fill = Sentiment)) +
+  geom_col()+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  labs(title = "Stock Market Key Words",
+       x = "Key Words",
+       y = "Count",
+       fill = "Sentiment")
+```
+
+
+
+#### Conclusion
+
+In our graphs and sentiment analysis we can see that the positive or bullish sentiment seems to overcome negative or bearish sentiment by a small margin. Important words such a positive, trust, bullish, call and long shift higher than their counterpart. However, we must be careful as the margins are small. Therefore, we can dictate that our conclusion over the users sentiment is Bullish Neutral. Users, remain bullish in the S & P 500 index but are concern about long-term performance.
+
+### 5. Logistic Regression
+
+#### Running Model
+
+We appealed to the Logistic Regression model to be able to predict if our Tweets collected were Organic or No Organic. An organic tweet can be defined as to be wrote and sent by an users at a specific time. On the other hand, a No Organic tweets is wrote in anticipation and sent at a later time by scheduling platform. 
+
+We classified tweets coming from 'Twitter Web App', 'Twitter for iPhone', and 'Twitter for Android' to be Organic and others to be otherwise No Organic. We ran the model utilizing numeric value from our data like 'display_text_width', 'followers_count' and 'favourites_count'
+
+```{r }
+# data preparation
+SPY_LG <- mutate(SPY_LG, Organic = ifelse(source == "Twitter Web App" | source == "Twitter for iPhone" | source == "Twitter for Android", "Organic", "No Organic"))
+
+SPY_LG$Organic <- factor(SPY_LG$Organic, levels=c("Organic", "No Organic"))
+
+# sample data
+
+# Set the random seed for repeatability
+set.seed(123)
+
+# Split the data into 3:1 ratio
+SPY_LG$Sample_LG <- sample.split(SPY_LG$Organic, SplitRatio = .75)
+
+train_LG <- subset(SPY_LG, Sample_LG == TRUE)
+test_LG <- subset(SPY_LG, Sample_LG == FALSE)
+
+# build LG model
+LG_Model <- glm(formula = Organic ~ display_text_width + followers_count + favourites_count,
+               data = train_LG,
+               family = binomial)
+
+summary(LG_Model)
+
+# Prediction
+test_LG$OrganicProbability <- predict(LG_Model, test_LG, type = "response")
+
+# Classify Organic and No Organic
+test_LG <- mutate(test_LG,
+               PredictedOrganic = ifelse(OrganicProbability < 0.5, "Organic", "No Organic"))
+
+# Convert to leveled factors
+test_LG$PredictedOrganic <- factor(test_LG$PredictedOrganic, levels = c("Organic", "No Organic"))
+
+# Generate a confusion matrix
+AccuracyOrganic <- confusionMatrix(test_LG$Organic, test_LG$PredictedOrganic)
+
+# Calculate Precision
+precisionOrganic <- precision(test_LG$Organic, test_LG$PredictedOrganic)
+
+# Calculate Recall
+recallOrganic <- recall(test_LG$Organic, test_LG$PredictedOrganic)
+```
+
+```{r, echo=FALSE}
+cat("Accurracy:", AccuracyOrganic[["overall"]][["Accuracy"]], "\n")
+cat("Precision:", precisionOrganic, "\n")
+cat("Recall:", recallOrganic, "\n")
+```
+
+
+#### Conclusion
+
+We can conclude that our model is able to predict Organic from No organic with a low accuracy of 69% but a precision of 99%. This means our model works almost perfect with our current data but will only produce a 69% accuracy with new data. It would be interesting to work with other variables to see the performance of a new logistic regression.
+
+### 6. Decision Trees 
+
+In our decision trees we wanted to predict more specifically if our tweets where Bullish or Bearish. We utilized a C-Tree model to decide if our tweets were bearish. Additionally, we ran a CART tree model to decide if out tweets otherwise bullish. Using financial key words utilized before, we classified them into Bullish Bearish as factors with levels "Yes" or "No". We would like to run our models to be able to determine if new tweets will deem bullish or bearish. We worked with factored and numerical strings as Verified and followers_count.
+
+#### C-Tree 
+
+##### Running Model
+
+```{r }
+# data preparation
+SPY_TREE$Bearish <- ifelse(str_detect(SPY_TREE$text, regex('bearish|bear Market|short|put|STFR|Top', ignore_case = TRUE)), "Yes", "No")
+
+SPY_TREE$Bearish <- factor(SPY_TREE$Bearish, levels = c("Yes","No"))
+
+SPY_TREE$verified <- as.factor(SPY_TREE$verified)
+
+
+# sample data
+# Set the random seed for repeatability
+set.seed(321)
+
+# split the data into 3:1 ratio
+sample_Tree = sample.split(SPY_TREE$Bearish, SplitRatio = .75)
+train_Tree = subset(SPY_TREE, sample_Tree == TRUE)
+test_Tree = subset(SPY_TREE, sample_Tree == FALSE)
+
+# build ctree
+Tree_Model <- ctree(Bearish ~ verified + followers_count , data = train_Tree)
+
+# prediction
+predictedBearish <- predict(Tree_Model, newdata = test_Tree)
+
+# Generate a confusion matrix
+Accuracy_Tree <- confusionMatrix(test_Tree$Bearish, predictedBearish)
+```
+
+```{r, echo=FALSE}
+cat("Accuracy:", Accuracy_Tree[['overall']][['Accuracy']], "\n")
+```
+
+
+##### Visualization
+
+```{r }
+plot(Tree_Model)
+```
+
+
+#### Cart 
+
+##### Running Model
+
+```{r }
+# data preparation
+SPY_CART$Bullish <- ifelse(str_detect(SPY_CART$text, regex('bullish|bull Market|long|call|BTFD|Bottom', ignore_case = TRUE)), "Yes", "No")
+
+SPY_CART$Bullish <- factor(SPY_CART$Bullish, levels = c("Yes","No"))
+
+
+# sample data
+# Set the random seed for repeatability
+set.seed(321) 
+
+# Split the data into 3:1 ratio
+sample_CART = sample.split(SPY_CART$Bullish, SplitRatio = .75)
+train_CART = subset(SPY_CART, sample_CART == TRUE)
+test_CART  = subset(SPY_CART, sample_CART == FALSE)
+
+# build cart tree
+cart_Model <- rpart(Bullish ~ followers_count + favorite_count + retweet_count, data = train_CART)
+
+# prediction
+pred.cart <- predict(cart_Model, newdata = test_CART, type = "class")
+table(test_CART$Bullish, pred.cart, dnn = c("Actual", "Prediction"))
+
+# Generate a confusion matrix
+Accuracy_CART <- confusionMatrix(test_CART$Bullish, pred.cart)
+```
+
+```{r, echo=FALSE}
+cat("Accuracy:", Accuracy_CART[['overall']][['Accuracy']], "\n")
+```
+
+
+##### Visualization
+
+```{r}
+rpart.plot(cart_Model, extra = 2, under = TRUE)
+```
+
+
+#### Conclusion 
+
+In our C-Tree model we can identify than the most important independent variable is followers count while verified is being excluded. Therefore, in our tweets data having a Verified account is not relevant to indicate if they are Bearish or not. On the other hand, in our CART tree model, the plot seems not to plot our variables meaning that our model might be overfitted. 
+
+Additionally, when looking at each models accuracy, out C-tree gives us a 87% while our CART 88%. However, Precision and Recall output 0 and NA respectively confirming that our model is overfitted to our Data. 
+
+
+### 7. Naive Base Model 
+
+We worked with a Naive Base Model to be able to classify whether our future tweets will include tickers about the S & P 500 ($SPY, $SPX ). We factored a new columns with levels "Yes" and "No" to indicate the inclusions of the tickers. We ran the model with the independent variables 'followers_count', 'favorite_count' and 'retweet_count'
+
+#### Running Model
+
+```{r}
+# data preparation
+SPY_NB$contains.SPX <- ifelse(str_detect(SPY_NB$text, regex('SPX| $SPX', ignore_case = TRUE)), "Yes", "No")
+
+SPY_NB$contains.SPX <- as.factor(SPY_NB$contains.SPX)
+
+# sample the data
+# Set the random seed for repeatability
+set.seed(123)
+
+# Split the data into 3:1 ratio
+sample_NB = sample.split(SPY_NB$contains.SPX, SplitRatio = .75)
+train_NB = subset(SPY_NB, sample_NB == TRUE)
+test_NB = subset(SPY_NB, sample_NB == FALSE)
+
+# build the naive bayes classifier
+SPY_NBmodel <- naiveBayes(contains.SPX ~ followers_count + favorite_count + retweet_count, data = train_NB)
+
+# predict the class
+# Perform on the testing set
+NB_prediction <- predict(SPY_NBmodel, test_NB, type = "class")
+
+# Confusion Matrix
+table(test_NB$contains.SPX, NB_prediction, dnn = c("Actual", "Prediction"))
+```
+
+```{r, results="hide"}
+# Output results
+data.frame(test_NB, Prediction = NB_prediction)
+```
+
+```{r}
+#accuracy
+Accuracy_NB <- confusionMatrix(test_NB$contains.SPX, NB_prediction)
+
+# Calculate Precision
+precision_NB <- precision(test_NB$contains.SPX, NB_prediction)
+
+# Calculate Recall
+recall_NB <- recall(test_NB$contains.SPX, NB_prediction)
+```
+
+```{r, echo=FALSE}
+cat("Accuracy:", Accuracy_NB[['overall']][['Accuracy']], "\n")
+cat("Precision:", precision_NB, "\n")
+cat("Recall:", recall_NB, "\n")
+```
+
+#### Conclusion
+
+In our Naive Model we obtained strong results doing our verification process. With our accuracy being 76%, precision 98%, and recall 76%. Therefore, moving forward we will be able to use the same variables with new data and be able to effectively classify if our tweets involved $SPX and $SPY
+
+### 8. Clustering 
+
+As we were thinking of the best data set to utilize for our Clustering model, we decided to work with our 'KeyWordsSentiment' which reflected specific financial terms both formal and informal that are typically used by traders and/or people involved in Twitter for financial market purposes as sentiment. 
+
+#### Running Model
+
+```{r }
+# data preparation
+# we will use the KeyWordsSentiment2 data set we created for our text sentiment analysis
+
+KeyWordsSentiment2 <- mutate(KeyWordsSentiment2, Sentiment = ifelse(Sentiment == "Positive", "1", "0"))
+
+KeyWordsSentiment2$Sentiment <- as.integer(KeyWordsSentiment2$Sentiment)
+
+# sample the data
+# Set the random seed
+set.seed(20)
+
+# Extract only Sentiment and Count data for clustering
+Sentiment <- data.frame(Count = KeyWordsSentiment2$Count, Sentiment = KeyWordsSentiment2$Sentiment)
+head(Sentiment)
+
+# within sum of squares
+# For each k, perform WSS, store the value
+wssSentiment <- numeric(6)
+for (k in 1:6){
+  wssSentiment[k] = sum(kmeans(Sentiment, k, nstart = 25)$withinss)
+}
+
+# Make a data out of the WSS results
+wssSentimentResults <- data.frame(k = c(1:6), WSS = wssSentiment)
+wssSentimentResults
+```
+
+
+```{r}
+# visualize WSS and determine k
+ggplot(data = wssSentimentResults, mapping = aes(x = k, y = WSS)) +
+  geom_point() +
+  geom_line() +
+  labs(title = "K-means: Tweet Sentiment",
+       x = "Number of Cluster k",
+       y = "Within Sum of Squares")
+```
+
+```{r}
+# perform kmeans with k set to 2
+SentimentCluster <- kmeans(Sentiment, 2, nstart = 25)
+
+# verification
+table(SentimentCluster$cluster, KeyWordsSentiment2$Sentiment)
+```
+
+
+#### Visualizations
+```{r }
+# add the cluster assignment to each point
+KeyWordsSentiment2$Cluster <- as.factor(SentimentCluster$cluster)
+
+# Get centroids
+centroidsSentiment <- as.data.frame(SentimentCluster$centers)
+centroidsSentiment$Cluster <- as.factor(c(1:2))
+
+
+# Visualize cluster assignment
+ggplot(data = KeyWordsSentiment2, mapping = aes(Count, Sentiment, color = Cluster)) +
+  geom_point() + 
+  geom_point(data = centroidsSentiment, aes(x = Count, y = Sentiment, fill = Cluster), size = 5, shape = 13) +
+  labs(title = "Positive vs. Negative",
+       x = "Count",
+       y = "Sentiment")
+```
+
+#### Conclusion 
+We realized, when creating our Clustering model, that our data was not fittted for this type of model, and we couldn't reach any valuable decision using this model.
+
+
+### 9. Time Series 
+
+In our Time Series analysis, we wanted to forecast if our tweets in the future will be Organic or No Organic. We decided to work with 'Twitter for iPhone' trying to capture younger users. Additionally, working with when the tweets were created, we preformed and split the default format ( Y - M - D : H - M - S) into new variables called Date (Y - M - D) and Time (H - M - S).
+
+#### Running Model
+
+```{r }
+# data preparation
+SPY_TS <- mutate(SPY_TS, Organic = ifelse(source == "Twitter Web App" | source == "Twitter for iPhone" | source == "Twitter for Android", "Organic", "No Organic"))
+
+SPY_TS. <- SPY_TS %>%
+  filter(source == "Twitter for iPhone") %>%
+  select(source, Date, Time, Organic) %>%
+  arrange(Date, Time)
+
+
+SPY_TS.$Time <- hour(as.hms(SPY_TS.$Time))
+SPY_TS.$Date <- as.numeric(as.Date(SPY_TS.$Date))
+
+SPY_TS. <- SPY_TS. %>%
+  arrange(Date, Time) %>%
+  group_by(Date, Time) %>%
+  summarize(count= n())
+
+
+# decompose
+TS_SPY <-  ts(SPY_TS.$count, start = c(18586, 14), end = c(18601, 21), frequency = 24)
+
+# Build the ARIMA model
+arimaSPY <- auto.arima(TS_SPY)
+arimaSPY
+
+# predict 5 days into the future 
+ForecastSPY <- forecast(arimaSPY, h = 120)
+```
+
+#### Visualizations
+
+```{r }
+# decompose plot
+plot(decompose(TS_SPY))
+
+# forecast plot
+plot(ForecastSPY)
+```
+
+
+#### Conclusion
+
+While working with our data frame and plotting a decompose Time Series Model, we can see that there is a seasonal trend in our tweets. This means that users tend to tweet more during certain hours of the day, most typically between 9 AM and 5 PM during market hours. Additionally, when plotting our Arima Model we can forecast that in the next 5 days there will be a downtrend in tweets created from iPhone. 
+
+
+### 10.Project Conclusion
+
+Through out our project, we analyzed the sentiment from a diversity of tweets collected randomly from Twitter, This sentiment came up to be Bullish Neutral, which states that users are cautiously optimistic in the Stock Market. Additionally, while performing several statistical analysis, we were able to predict certain characteristics of the tweets that would allow to perform the same experiment with new data, and be able to analyzed its sentiment. 
+
+Looking at the business perspective, and its application, we recommend 4 steps moving forward:
+1. Capitalize and Reduce: Investors should take current profits in the equity market in other to secure long term investments, and reduce exposure to market corrections and possible initiations of Bear Market.
+2. Invest in the Now: Because investors should be cautiously optimistic, if investments are to be made, they should remain short-term. If there is a return of investment that is reasonable, it should be taken.
+3. Protection: For the remainder of the investments either, for long-term or short-term, buy insurance. This would mean to buy Options Put on your current positions and be protected from sudden down-trend market movements. 
+4. Diversify: Create new streams of income other that Equity Markets. It is advisable to follow our statistical analysis to gain insights on Twitter users and engage in new ventures. For example, take into account our Time Series Analysis, where we can see a decline in users tweeting from Iphones. This could mean that costumers are looking for alternative mobile devices, and desktop to utilize while in Social Media.
+
+
+
+
+
